@@ -6,6 +6,7 @@ BioSample,LibraryName,refGenome,Run,Organism,BioProject,fq1,fq2,refPath
 '''
 
 import argparse
+import re
 import sys
 import os
 
@@ -18,7 +19,7 @@ def parse_dir_files(dir_path, extensions):
     file_list = []
     for filename in os.listdir(dir_path):
         f = os.path.join(dir_path, filename)
-        if (os.path.isfile(f)) and ('.'+f.split('.')[-1] in extensions):
+        if '.'+f.split('.')[-1] in extensions:
             file_list.append(f)
     return file_list
 
@@ -27,9 +28,10 @@ def get_ids_from_sample_list(file_list, extensions):
     ## Parses the list of file names and returns lists of IDs
     ## (removes extensions)
 
-    id_list = file_list
+    id_list = [f.split('/')[-1] for f in file_list]
     for ext in extensions:
         id_list = [i.replace(ext, '') for i in id_list]
+    id_list = list(set([re.sub('_2$', '', re.sub('_1$', '', i)) for i in id_list]))
     return id_list
 
 
@@ -41,10 +43,11 @@ def write_samples_file(id_list, file_list, ref_path, name_sci, project, assembly
     print('BioSample,LibraryName,refGenome,Run,Organism,BioProject,fq1,fq2,refPath')
 
     # write samples
-    for i in id_list:
-        fq_files = ','.join([f for f in file_list if f.startswith(i)])
-        samples_info = '{},{}'.format(i, i)
-        ref_info = '{},{},{},{}'.format(assembly_ref, srx, name_sci, project)
+    for i in range(len(id_list)):        
+        sample_id = id_list[i]
+        fq_files = ','.join(sorted([f for f in file_list if sample_id in f]))
+        samples_info = '{},{}'.format(sample_id, sample_id)
+        ref_info = '{},{},{},{}'.format(assembly_ref, srx+str(i), name_sci, project)
         full_sample_line = '{},{},{},{}'.format(samples_info, ref_info, fq_files, ref_path)
         print(full_sample_line)
 
@@ -55,13 +58,13 @@ def main():
     parser.add_argument('-f', '--fastq_dir', required=True, help="Path to dir with fastq files")
     parser.add_argument('-r', '--ref_path', required=True, help="Path to reference genome")
     parser.add_argument('-n', '--name_sci', required=True, help="Scientific name of the organism")
-    parser.add_argument('-a', '--assembly_ref', default='GCA_xxxxxxxxx', help="NCBI ref assembly ID \
-                        (like GCA_013399945.1) if known; default: GCA_xxxxxxxxx")
-    parser.add_argument('-p', '--project', default='PRJNAxxxxxx', help="Project ID (like PRJNA839346) if known;\
-                        default: PRJNAxxxxxx")
-    parser.add_argument('-s', '--srx', default='SRXxxxxxxxx', help="SRX ID of the first sample (like SRX15327220) if known;\
-                        default: SRXxxxxxxxx")
-
+    parser.add_argument('-a', '--assembly_ref', default='GCA_000000000', help="NCBI ref assembly ID \
+                        (like GCA_013399945.1) if known; default: GCA_000000000")
+    parser.add_argument('-p', '--project', default='PRJNA000000', help="Project ID (like PRJNA839346) if known;\
+                        default: PRJNA000000")
+    parser.add_argument('-s', '--srx', default='SRX0000000', help="SRX ID of the first sample (like SRX15327220) if known;\
+                        default: SRX0000000$i")
+    
     args = parser.parse_args()
 
     ## Parse arguments
