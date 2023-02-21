@@ -9,6 +9,7 @@ import argparse
 import re
 import sys
 import os
+import subprocess
 
 
 
@@ -22,6 +23,31 @@ def parse_dir_files(dir_path, extensions):
         if '.'+f.split('.')[-1] in extensions:
             file_list.append(f)
     return file_list
+
+
+def make_file_links(file_list, datadir):
+    ## Makes links to files in requested directory 
+
+    wdir = os.getcwd()
+
+    # create requested datadir if does not exist
+    if not os.path.exists(datadir):
+        os.makedirs(datadir)
+    print("Created directory: {}".format(datadir))
+
+    # go to the requested dir to put links into
+    subprocess.run['cd', '{}'.format(datadir)]
+    print('Now in: '.format(os.getcwd()))
+
+    # create a symlink for each file
+    for f in file_list:
+        f_name = f.split('/')[-1]
+        subprocess.run(['ln', '-s', f, f_name])
+
+    # got back to wdir
+    subprocess.run['cd', '{}'.format(wdir)]
+    print('Now in: '.format(os.getcwd()))
+
 
 
 def get_ids_from_sample_list(file_list, extensions):
@@ -55,17 +81,44 @@ def write_samples_file(id_list, file_list, ref_path, name_sci, project, assembly
 
 def main():
     parser = argparse.ArgumentParser(description='Write sample files.')
-    parser.add_argument('-f', '--fastq_dir', required=True, help="Path to dir with fastq files")
-    parser.add_argument('-r', '--ref_path', required=True, help="Path to reference genome")
-    parser.add_argument('-n', '--name_sci', required=True, help="Scientific name of the organism")
-    parser.add_argument('-a', '--assembly_ref', default='GCA_000000000', help="NCBI ref assembly ID \
-                        (like GCA_013399945.1) if known; default: GCA_000000000")
-    parser.add_argument('-p', '--project', default='PRJNA000000', help="Project ID (like PRJNA839346) if known;\
-                        default: PRJNA000000")
-    parser.add_argument('-s', '--srx', default='SRX0000000', help="SRX ID of the first sample (like SRX15327220) if known;\
-                        default: SRX0000000$i")
-    
+    parser.add_argument(
+                        '-f',
+                        '--fastq_dir',
+                        required=True,
+                        help="Full path to dir with fastq files"
+                         )
+    parser.add_argument(
+                        '-r',
+                        '--ref_path',
+                        required=True,
+                        help="Full path to reference genome"
+                           )
+    parser.add_argument(
+                        '-n',
+                        '--name_sci',
+                        required=True,
+                        help="Scientific name of the organism"
+                           )
+    parser.add_argument(
+                        '-a',
+                        '--assembly_ref',
+                        default='GCA_000000000',
+                        help="NCBI ref assembly ID (like GCA_013399945.1) if known; default: GCA_000000000"
+                        )
+    parser.add_argument(
+                        '-p',
+                        '--project',
+                        default='PRJNA000000',
+                        help="Project ID (like PRJNA839346) if known; default: PRJNA000000"
+                        )
+    parser.add_argument(
+                        '-s',
+                        '--srx',
+                        default='SRX0000000',
+                        help="SRX ID of the first sample (like SRX15327220) if known; default: SRX0000000$i"
+                        )
     args = parser.parse_args()
+
 
     ## Parse arguments
     fastq_dir = args.fastq_dir
@@ -75,14 +128,22 @@ def main():
     project = args.project
     srx = args.srx
 
+
     ## Parse fastq files -> get sample IDs
     extensions = ['.gz', '.fastq']
     file_list = parse_dir_files(fastq_dir, extensions)
     id_list = get_ids_from_sample_list(file_list, extensions)
 
-    ## Make symbolic links to reseq fastq files in data/
 
-    ## Make symbolic links to ref genomic fasta in data/
+    ## Make symbolic links to reseq fastq files in data/local_fastq
+    datadir='data/local_fastq'
+    make_file_links(file_list, datadir)
+
+
+    ## Make symbolic links to ref genomic fasta in data/local_genome
+    datadir='data/local_genome'
+    make_file_links(ref_path, datadir)
+
 
     ## Write samples lines in snpArcher-prefered format
     write_samples_file(id_list, file_list, ref_path, name_sci, project, assembly_ref, srx)
