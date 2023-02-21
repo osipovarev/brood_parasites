@@ -33,7 +33,7 @@ def make_file_links(file_list, datadir):
     # create requested datadir if does not exist
     if not os.path.exists(datadir):
         os.makedirs(datadir)
-    print("Created directory: {}".format(datadir))
+        print("Created directory: {}".format(datadir))
 
     # go to the requested dir to put links into
     subprocess.run(['cd', '{}'.format(datadir)])
@@ -42,7 +42,9 @@ def make_file_links(file_list, datadir):
     # create a symlink for each file
     for f in file_list:
         f_name = f.split('/')[-1]
-        subprocess.run(['ln', '-s', f, f_name])
+        print(f)
+        print(f_name)
+        # subprocess.run(['ln', '-s', f, f_name])
 
     # got back to wdir
     subprocess.run(['cd', '{}'.format(wdir)])
