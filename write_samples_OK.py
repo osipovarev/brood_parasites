@@ -9,7 +9,6 @@ import argparse
 import re
 import sys
 import os
-import subprocess
 
 
 
@@ -33,23 +32,17 @@ def make_file_links(file_list, datadir):
     # create requested datadir if does not exist
     if not os.path.exists(datadir):
         os.makedirs(datadir)
-        print("Created directory: {}".format(datadir))
 
     # go to the requested dir to put links into
-    subprocess.run(['cd', '{}'.format(datadir)])
-    print('Now in: '.format(os.getcwd()))
+    os.chdir(datadir)
 
     # create a symlink for each file
     for f in file_list:
         f_name = f.split('/')[-1]
-        print(f)
-        print(f_name)
-        # subprocess.run(['ln', '-s', f, f_name])
+        os.symlink(f, f_name)
 
     # got back to wdir
-    subprocess.run(['cd', '{}'.format(wdir)])
-    print('Now in: '.format(os.getcwd()))
-
+    os.chdir(wdir)
 
 
 def get_ids_from_sample_list(file_list, extensions):
@@ -59,7 +52,7 @@ def get_ids_from_sample_list(file_list, extensions):
     id_list = [f.split('/')[-1] for f in file_list]
     for ext in extensions:
         id_list = [i.replace(ext, '') for i in id_list]
-    id_list = list(set([re.sub('_2$', '', re.sub('_1$', '', i)) for i in id_list]))
+    id_list = list(set([re.sub('_[a-zA-Z]2$', '', re.sub('_[a-zA-Z]1$', '', i)) for i in id_list]))
     return id_list
 
 
@@ -94,6 +87,20 @@ def main():
                         '--ref_path',
                         required=True,
                         help="Full path to reference genome"
+                           )
+    parser.add_argument(
+                        '-lf',
+                        '--local_fastq',
+                        type=str,
+                        default='data/local_fastq/',
+                        help="Relative path to dir to put links to fastq files; default: data/local_fastq/"
+                         )
+    parser.add_argument(
+                        '-lr',
+                        '--local_ref',
+                        type=str,
+                        default='data/local_genome',
+                        help="Relative path to dir to put links to reference genome; default: data/local_genome/"
                            )
     parser.add_argument(
                         '-n',
@@ -138,13 +145,13 @@ def main():
 
 
     ## Make symbolic links to reseq fastq files in data/local_fastq
-    datadir='data/local_fastq'
+    datadir=args.local_fastq
     make_file_links(file_list, datadir)
 
 
     ## Make symbolic links to ref genomic fasta in data/local_genome
-    datadir='data/local_genome'
-    make_file_links(ref_path, datadir)
+    datadir=args.local_ref
+    make_file_links([ref_path], datadir)
 
 
     ## Write samples lines in snpArcher-prefered format
