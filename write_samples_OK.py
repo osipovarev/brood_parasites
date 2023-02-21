@@ -64,12 +64,17 @@ def write_samples_file(id_list, file_list, ref_path, name_sci, project, assembly
     # write header
     print('BioSample,LibraryName,refGenome,Run,Organism,BioProject,fq1,fq2,refPath')
 
+    # define SRX format
+    n_digit = len(srx.replace('SRX', ''))
+    srx_1 = int(re.sub('SRX0+', '', srx))
+
     # write samples
     for i in range(len(id_list)):        
         sample_id = id_list[i]
         fq_files = ','.join(sorted([f for f in file_list if sample_id in f]))
         samples_info = '{},{}'.format(sample_id, sample_id)
-        ref_info = '{},{},{},{}'.format(assembly_ref, srx+str(i), name_sci, project)
+        srx_i = 'SRX' + '0' * (n_digit - len(str(srx_1 + i))) + str(srx_1 + i)
+        ref_info = '{},{},{},{}'.format(assembly_ref, srx_i, name_sci, project)
         full_sample_line = '{},{},{},{}'.format(samples_info, ref_info, fq_files, ref_path)
         print(full_sample_line)
 
@@ -124,7 +129,7 @@ def main():
     parser.add_argument(
                         '-s',
                         '--srx',
-                        default='SRX0000000',
+                        default='SRX00000001',
                         help="SRX ID of the first sample (like SRX15327220) if known; default: SRX0000000$i"
                         )
     args = parser.parse_args()
@@ -157,7 +162,8 @@ def main():
 
     ## Write samples lines in snpArcher-prefered format
     local_file_list = [os.getcwd() + '/' + local_fastq + f.split('/')[-1] for f in file_list]
-    write_samples_file(id_list, local_file_list, ref_path, name_sci, project, assembly_ref, srx)
+    local_ref_path = os.getcwd() + '/' + local_ref + '/' + ref_path.split('/')[-1]
+    write_samples_file(id_list, local_file_list, local_ref_path, name_sci, project, assembly_ref, srx)
 
 
 if __name__ == "__main__":
