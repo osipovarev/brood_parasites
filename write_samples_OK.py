@@ -20,7 +20,7 @@ def parse_dir_files(dir_path, extensions):
     file_list = []
     for filename in os.listdir(dir_path):
         f = os.path.join(dir_path, filename)
-        if '.'+f.split('.')[-1] in extensions:
+        if '.' + f.split('.')[-1] in extensions:
             file_list.append(f)
     return file_list
 
@@ -36,7 +36,7 @@ def make_file_links(file_list, datadir):
     print("Created directory: {}".format(datadir))
 
     # go to the requested dir to put links into
-    subprocess.run['cd', '{}'.format(datadir)]
+    subprocess.run(['cd', '{}'.format(datadir)])
     print('Now in: '.format(os.getcwd()))
 
     # create a symlink for each file
@@ -45,7 +45,7 @@ def make_file_links(file_list, datadir):
         subprocess.run(['ln', '-s', f, f_name])
 
     # got back to wdir
-    subprocess.run['cd', '{}'.format(wdir)]
+    subprocess.run(['cd', '{}'.format(wdir)])
     print('Now in: '.format(os.getcwd()))
 
 
