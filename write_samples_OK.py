@@ -39,7 +39,8 @@ def make_file_links(file_list, datadir):
     # create a symlink for each file
     for f in file_list:
         f_name = f.split('/')[-1]
-        os.symlink(f, f_name)
+        if not os.path.islink(f_name):
+            os.symlink(f, f_name)
 
     # got back to wdir
     os.chdir(wdir)
@@ -132,6 +133,8 @@ def main():
     ## Parse arguments
     fastq_dir = args.fastq_dir
     ref_path = args.ref_path
+    local_fastq = args.local_fastq
+    local_ref = args.local_ref
     name_sci = args.name_sci
     assembly_ref = args.assembly_ref
     project = args.project
@@ -145,17 +148,16 @@ def main():
 
 
     ## Make symbolic links to reseq fastq files in data/local_fastq
-    datadir=args.local_fastq
-    make_file_links(file_list, datadir)
+    make_file_links(file_list, local_fastq)
 
 
     ## Make symbolic links to ref genomic fasta in data/local_genome
-    datadir=args.local_ref
-    make_file_links([ref_path], datadir)
+    make_file_links([ref_path], local_ref)
 
 
     ## Write samples lines in snpArcher-prefered format
-    write_samples_file(id_list, file_list, ref_path, name_sci, project, assembly_ref, srx)
+    local_file_list = [os.getcwd() + '/' + local_fastq + f.split('/')[-1] for f in file_list]
+    write_samples_file(id_list, local_file_list, ref_path, name_sci, project, assembly_ref, srx)
 
 
 if __name__ == "__main__":
