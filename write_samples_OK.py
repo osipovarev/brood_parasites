@@ -53,7 +53,7 @@ def get_ids_from_sample_list(file_list, extensions):
     id_list = [f.split('/')[-1] for f in file_list]
     for ext in extensions:
         id_list = [i.replace(ext, '') for i in id_list]
-    id_list = list(set([re.sub('_[a-zA-Z]2$', '', re.sub('_[a-zA-Z]1$', '', i)) for i in id_list]))
+    id_list = list(set([re.sub('_[a-zA-Z]?2$', '', re.sub('_[a-zA-Z]?1$', '', i)) for i in id_list]))
     return id_list
 
 
