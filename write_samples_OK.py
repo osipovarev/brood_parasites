@@ -3,6 +3,7 @@
 '''
 This script prepares samples.csv file specific for snpArcher input:
 BioSample,LibraryName,refGenome,Run,Organism,BioProject,fq1,fq2,refPath
+it also makes links to the fastq and genome files in corresponding dirs.
 '''
 
 import argparse
