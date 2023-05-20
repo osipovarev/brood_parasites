@@ -62,11 +62,10 @@ def main():
             line_values = [int(i) for i in itemgetter(*check_columns)(line.split())]
             coordinate = [i for i in itemgetter(*position_columns)(line.split())]
 
+            line_total = sum(line_values)
             if args.mean:
-                line_total = sum(line_values) / len(line_values)
                 window_value += line_total / window
             else:
-                line_total = sum(line_values)
                 window_value += line_total
 
             ## check if we went beyond the window
