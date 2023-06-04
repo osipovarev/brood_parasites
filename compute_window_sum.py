@@ -58,18 +58,21 @@ def main():
 
     with open(args.input) as inf:
         for line in inf:
-
-            line_values = [int(i) for i in itemgetter(*check_columns)(line.split())]
+            if len(check_columns) == 1:
+                line_values = float(line.split()[check_columns[0]])
+                line_total = line_values
+            elif len(check_columns) > 1:
+                line_values = [float(i) for i in itemgetter(*check_columns)(line.split())]
+                line_total = sum(line_values)
             coordinate = [i for i in itemgetter(*position_columns)(line.split())]
 
-            line_total = sum(line_values)
             if args.mean:
                 window_value += line_total / window
             else:
                 window_value += line_total
 
             ## check if we went beyond the window
-            if line_count >= 1000:
+            if line_count >= window:
                 print('{}\t{}'.format('\t'.join(coordinate), window_value))
                 line_count = 0
                 window_value = 0
