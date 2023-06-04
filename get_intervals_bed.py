@@ -31,8 +31,9 @@ def main():
             else:
                 dist = pos_next - pos_current
                 if (dist >= args.size) or (scaffold_next != scaffold_current):
-                    ## out of the window!
-                    print('{}\t{}\t{}'.format(scaffold_current, pos_0, pos_current))
+                    ## out of the window! => print if interval big enough
+                    if pos_current - pos_0 > args.size:
+                        print('{}\t{}\t{}'.format(scaffold_current, pos_0, pos_current))
                     scaffold_current = scaffold_next
                     pos_0 = pos_next
                     pos_current = pos_next
