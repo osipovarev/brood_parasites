@@ -26,7 +26,7 @@ def main():
 
             if count == 0:
             	position_previous = position_curr
-            	value_previous = value_curr
+            	value_previous = 0 
             	print('{}\t{}'.format(position_previous, value_previous))
 
             else:
