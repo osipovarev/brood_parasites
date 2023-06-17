@@ -14,11 +14,24 @@ __author__ = "Ekaterina Osipova, 2023."
 def main():
     ## Parse argument
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--filein', type=str, help='input file with two columns to parse: position\t value')
+    parser.add_argument(
+                        '-f',
+                        '--filein',
+                        type=str,
+                        help='input file with two columns to parse: position\t value'
+                        )
+    parser.add_argument(
+                        '-hh',
+                        '--header',
+                        type=str,
+                        default='position\trate',
+                        help='a header line to add to the output; default=position\trate'
+                        )
     args = parser.parse_args()
 
     ## Read input bed file line by line;
     count = 0
+    print(args.header)
     with open(args.filein) as inf:
         for line in inf:
             position_curr = int(line.split()[0])  
