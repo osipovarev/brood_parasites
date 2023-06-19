@@ -1,0 +1,57 @@
+#!/usr/bin/env Rscript
+
+## Enrichment analysis ---------------------------------------------------------
+
+## Load argument parser package
+suppressPackageStartupMessages(library(argparse))
+
+## Load clusterProfiler and related packages
+suppressPackageStartupMessages(library(clusterProfiler))
+suppressPackageStartupMessages(library(org.Hs.eg.db))
+suppressPackageStartupMessages(library(ggplot2))
+
+
+## Initiate argument parser
+parser = ArgumentParser()
+parser$add_argument("-w", "--workdir", type="character", help="abs path to work (current) dir")
+parser$add_argument("-p", "--pcutoff", type="numeric", default=0.1, help="p-value cutoff on the input values; default=0.1")
+parser$add_argument("-g", "--genetab", type="character", help="table (.tsv) from Degenotate MK test")
+parser$add_argument("-o", "--outfile", type="character", help="GO enrich results output file name (adj p-value cutoff <.01)")
+args = parser$parse_args()
+
+## Parse arguments from command line
+curr_dir = args$workdir
+setwd(curr_dir)
+file_name = args$genetab
+enrich_out_file = args$outfile
+pval_thresh = args$pcutoff
+
+## Perform gene set enrichment analysis (clusterProfiler). DoS > 0
+for (dos in c('pos', 'neg')) {
+  
+  if (dos == 'pos') {
+    genes = na.omit(file_df[(file_df$mk.raw.p.value < pval_thresh) & (file_df$dos > 0), ])$gene
+  }
+  else {
+    genes = na.omit(file_df[(file_df$mk.raw.p.value < pval_thresh) & (file_df$dos < 0), ])$gene
+  }
+  
+  enrich_res <- enrichGO(
+    gene          = genes,
+    OrgDb         = org.Hs.eg.db,
+    keyType       = "SYMBOL",
+    ont           = "BP",
+    pvalueCutoff  = 0.05,
+    qvalueCutoff  = 0.5,
+    pAdjustMethod = "BH",
+    minGSSize     = 35,
+    maxGSSize     = 500,
+    universe = file_df$gene
+  )
+  
+  enrich_result = enrich_res@result
+  write.table(enrich_result[enrich_result$pvalue < 0.01, ], row.names=F, quote=F, file=enrich_out_file, sep="\t")
+}
+
+
+
