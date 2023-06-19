@@ -46,8 +46,8 @@ for (dos in c('pos', 'neg')) {
     pvalueCutoff  = 0.05,
     qvalueCutoff  = 0.5,
     pAdjustMethod = "BH",
-    minGSSize     = 35,
-    maxGSSize     = 500,
+    minGSSize     = 40,
+    maxGSSize     = 400,
     universe = file_df$gene
   )
   
