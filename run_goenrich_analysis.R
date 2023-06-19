@@ -23,7 +23,7 @@ args = parser$parse_args()
 curr_dir = args$workdir
 setwd(curr_dir)
 file_name = args$genetab
-enrich_outdir = args$outfile
+enrich_outdir = args$outdir
 pval_thresh = args$pcutoff
 
 file_df <- read.csv(file_name, header=TRUE, sep='\t')
