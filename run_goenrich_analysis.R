@@ -48,7 +48,7 @@ for (dos in c('pos', 'neg')) {
     pAdjustMethod = "BH",
     minGSSize     = 40,
     maxGSSize     = 400,
-    universe = file_df$gene
+    universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
   )
   
   enrich_result = enrich_res@result
