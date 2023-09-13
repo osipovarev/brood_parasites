@@ -43,16 +43,18 @@ for (dos in c('pos', 'neg')) {
     OrgDb         = org.Hs.eg.db,
     keyType       = "SYMBOL",
     ont           = "BP",
-    pvalueCutoff  = 0.05,
-    qvalueCutoff  = 0.5,
+    pvalueCutoff  = 1,
+    qvalueCutoff  = 1,
     pAdjustMethod = "BH",
     minGSSize     = 40,
     maxGSSize     = 400,
     universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
   )
   
-  enrich_result = enrich_res@result
-  enrich_out_file = paste0(enrich_outdir, dos, '.enrichGO.tsv')
+  # enrich_result = enrich_res@result
+  enrich_result = gofilter(enrich_res, level=4)
+
+  enrich_out_file = paste0(enrich_outdir, dos, '.level4.enrichGO.tsv')
   write.table(enrich_result[enrich_result$pvalue < 0.01, ], row.names=F, quote=F, file=enrich_out_file, sep="\t")
 }
 
