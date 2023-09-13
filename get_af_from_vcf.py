@@ -19,9 +19,9 @@ def extract_vcf_entires(vcf_data, region):
     if region == '':
         vcf_entires = vcf_data.fetch()
     else:
-        contig = region.split()[0]
-        start = int(region.split()[1])
-        end = int(region.split()[2])
+        contig = region.split('_')[0]
+        start = int(region.split('_')[1])
+        end = int(region.split('_')[2])
         vcf_entires = vcf_data.fetch(contig, start, end)
     return vcf_entires
 
@@ -68,7 +68,7 @@ def main():
                         '--region', 
                         type=str, 
                         default='', 
-                        help='bed line with a region to extract from VCF: chr start end'
+                        help='bed line with a region to extract from VCF: chr_start_end'
                         )
 
     args = parser.parse_args()
