@@ -39,14 +39,19 @@ def get_af_by_class(vcf_entires):
         AN = i.info['AN']
         AA = i.info['AA']
         
-        if AA == ALT:
-            AC = AN - AC
-        elif (AA != ALT) and (AA != REF):
-            AC = 0
+        if AA != REF:
+            # check if snp wasn't introduced with the outgroup
+            if (AA == ALT) and (AC != 2):
+                # flip AC
+                AC = AN - AC
+            # exlude if it is new or 3-way to resolve
+            else:
+                AC = 0
+        # remove outgroup from AN
         AN = AN - 2
         AF = AC / AN
-        
-        if (AF != 1) and (AF != 0):
+
+        if (AF != 0) and (AF != 1):
             if 'missense_variant' in i.info['ANN'][0]:
                 AF_nonsyn.append(AF)
             elif 'synonymous_variant' in i.info['ANN'][0]:
