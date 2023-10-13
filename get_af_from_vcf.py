@@ -19,9 +19,9 @@ def extract_vcf_entires(vcf_data, region):
     if region == '':
         vcf_entires = vcf_data.fetch()
     else:
-        contig = region.split('_')[0]
-        start = int(region.split('_')[1])
-        end = int(region.split('_')[2])
+        contig = region.split('|')[0]
+        start = int(region.split('|')[1])
+        end = int(region.split('|')[2])
         vcf_entires = vcf_data.fetch(contig, start, end)
     return vcf_entires
 
@@ -88,8 +88,7 @@ def main():
     ## Output AF
     AF_nonsyn_line = ','.join([str(round(i, 3)) for i in AF_nonsyn])
     AF_syn_line = ','.join([str(round(i, 3)) for i in AF_syn])
-    print('__pN__:\t{}'.format(AF_nonsyn_line))
-    print('__pS__:\t{}'.format(AF_syn_line))
+    print('__pN__:{}\t__pS__:{}'.format(AF_nonsyn_line, AF_syn_line))
 
 
 if __name__ == '__main__':
