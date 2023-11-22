@@ -32,10 +32,10 @@ file_df <- read.csv(file_name, header=TRUE, sep='\t')
 for (dos in c('pos', 'neg')) {
   
   if (dos == 'pos') {
-    genes = na.omit(file_df[(file_df$mk.raw.p.value < pval_thresh) & (file_df$dos > 0), ])$gene
+    genes = na.omit(file_df[(file_df$imp.pval < pval_thresh) & (file_df$imp.dos > 0), ])$gene
   }
   else {
-    genes = na.omit(file_df[(file_df$mk.raw.p.value < pval_thresh) & (file_df$dos < 0), ])$gene
+    genes = na.omit(file_df[(file_df$imp.pval < pval_thresh) & (file_df$imp.dos < 0), ])$gene
   }
   
   enrich_res <- enrichGO(
@@ -48,13 +48,18 @@ for (dos in c('pos', 'neg')) {
     pAdjustMethod = "BH",
     minGSSize     = 40,
     maxGSSize     = 400,
-    universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
+    # universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
+    universe = file_df$gene
   )
   
   # enrich_result = enrich_res@result
-  enrich_result = gofilter(enrich_res, level=4)
+  # enrich_result = gofilter(enrich_res, level=4)
+  enrich_filt = simplify(enrich_res, cutoff=0.5, by="p.adjust", select_fun=min)
+  enrich_result = enrich_filt@result
 
-  enrich_out_file = paste0(enrich_outdir, dos, '.level4.enrichGO.tsv')
+  # enrich_out_file = paste0(enrich_outdir, dos, '.enrichGO.tsv')
+  enrich_out_file = paste0(enrich_outdir, dos, '.enrichGO.all_genes_BG.tsv')
+  
   write.table(enrich_result[enrich_result$pvalue < 0.01, ], row.names=F, quote=F, file=enrich_out_file, sep="\t")
 }
 
