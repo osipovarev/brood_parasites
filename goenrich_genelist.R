@@ -14,17 +14,21 @@ suppressPackageStartupMessages(library(ggplot2))
 ## Initiate argument parser
 parser = ArgumentParser()
 parser$add_argument("-w", "--workdir", type="character", help="abs path to work (current) dir")
-parser$add_argument("-g", "--genetab", type="character", help="table (.tsv) from Degenotate MK test")
-parser$add_argument("-o", "--outdir", type="character", help="output dir name (adj p-value cutoff <.01) to put files .enrichGO.tsv")
+parser$add_argument("-g", "--genes", type="character", help="gene list (newline-separated)")
+parser$add_argument("-u", "--universe", type="character", help="gene list (newline-separated) \
+                      to be used as universe in the enrichment analysis")
+parser$add_argument("-o", "--outfile", type="character", help="output file name (adj p-value cutoff <.01)")
 args = parser$parse_args()
 
 ## Parse arguments from command line
 curr_dir = args$workdir
 setwd(curr_dir)
-file_name = args$genetab
-enrich_outdir = args$outdir
+file_name = args$genes
+enrich_outfile = args$outfile
+universe_file = args$universe
 
-genes <- read.csv(file_name, header=FALSE)
+genes <- read.csv(file_name, header=FALSE)[[1]]
+universe <- read.csv(universe_file, header=FALSE)[[1]]
 
 ## Perform gene set enrichment analysis (clusterProfiler)
 enrich_res <- enrichGO(
@@ -38,7 +42,7 @@ enrich_res <- enrichGO(
   minGSSize     = 40,
   maxGSSize     = 400,
   # universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
-  universe = file_df$gene
+  universe = universe
 )
 
 # enrich_result = enrich_res@result
@@ -47,6 +51,4 @@ enrich_filt = simplify(enrich_res, cutoff=0.5, by="p.adjust", select_fun=min)
 enrich_result = enrich_filt@result
 
 # enrich_out_file = paste0(enrich_outdir, dos, '.enrichGO.tsv')
-enrich_out_file = paste0(enrich_outdir, dos, '.enrichGO.all_genes_BG.tsv')
-
-write.table(enrich_result[enrich_result$pvalue < 0.01, ], row.names=F, quote=F, file=enrich_out_file, sep="\t")
+write.table(enrich_result[enrich_result$pvalue < 0.01, ], row.names=F, quote=F, file=enrich_outfile, sep="\t")
