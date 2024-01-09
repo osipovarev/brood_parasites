@@ -27,27 +27,50 @@ file_name = args$genes
 enrich_outfile = args$outfile
 universe_file = args$universe
 
+
 genes <- read.csv(file_name, header=FALSE)[[1]]
-universe <- read.csv(universe_file, header=FALSE)[[1]]
 
 ## Perform gene set enrichment analysis (clusterProfiler)
-enrich_res <- enrichGO(
-  gene          = genes,
-  OrgDb         = org.Hs.eg.db,
-  keyType       = "SYMBOL",
-  ont           = "BP",
-  pvalueCutoff  = 1,
-  qvalueCutoff  = 1,
-  pAdjustMethod = "BH",
-  minGSSize     = 40,
-  maxGSSize     = 400,
-  # universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
-  universe = universe
-)
+if (is.null(universe_file)) {
+  print('background gene set is not provided => using all')
+  
+  enrich_res <- enrichGO(
+    gene          = genes,
+    OrgDb         = org.Hs.eg.db,
+    keyType       = "SYMBOL",
+    ont           = "BP",
+    pvalueCutoff  = 1,
+    qvalueCutoff  = 1,
+    pAdjustMethod = "BH",
+    minGSSize     = 40,
+    maxGSSize     = 400,
+    )
+
+} else {
+  print('background gene set is provided')
+  universe <- read.csv(universe_file, header=FALSE)[[1]]
+  
+  enrich_res <- enrichGO(
+    gene          = genes,
+    OrgDb         = org.Hs.eg.db,
+    keyType       = "SYMBOL",
+    ont           = "BP",
+    pvalueCutoff  = 1,
+    qvalueCutoff  = 1,
+    pAdjustMethod = "BH",
+    minGSSize     = 40,
+    maxGSSize     = 400,
+    # universe = na.omit(file_df[(file_df$mk.raw.p.value != 1), ])$gene
+    universe = universe
+    )
+}
+
+
+
 
 # enrich_result = enrich_res@result
 # enrich_result = gofilter(enrich_res, level=4)
-enrich_filt = simplify(enrich_res, cutoff=0.5, by="p.adjust", select_fun=min)
+enrich_filt = simplify(enrich_res, cutoff=0.3, by="p.adjust", select_fun=min)
 enrich_result = enrich_filt@result
 
 # enrich_out_file = paste0(enrich_outdir, dos, '.enrichGO.tsv')
