@@ -67,7 +67,7 @@ def write_samples_file(id_list, file_list, ref_path, name_sci, project, assembly
 
     # define SRX format
     n_digit = len(srx.replace('SRX', ''))
-    srx_1 = int(re.sub('SRX0+', '', srx))
+    srx_1 = int(re.sub('SRX+', '', srx))
 
     # write samples
     for i in range(len(id_list)):        
