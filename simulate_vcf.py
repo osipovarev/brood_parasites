@@ -3,6 +3,7 @@
 # This script generates a polarized VCF of N diploid individuals and an outgroup \n 
 import argparse
 import msprime
+import sys
 
 
 __author__ = "Ekaterina Osipova, 2024."
@@ -25,49 +26,51 @@ def simulate_and_write_vcf(args):
         random_seed=args.random_seed
     )
 
-    # Introduce mutations on the tree sequence
+        # Introduce mutations on the tree sequence
     mutated_ts = msprime.sim_mutations(
         tree_sequence,
         rate=args.mutation_rate,
         random_seed=args.random_seed
     )
+    mutated_ts.write_vcf(sys.stdout)
 
-    # Set up the output VCF file, only writing the final flipped version
-    with open(args.output_vcf, "w") as vcf_file:
-        # Write the VCF header
-        vcf_file.write("##fileformat=VCFv4.2\n")
-        vcf_file.write(f"##contig=<ID=chr1,length={args.chromosome_length}>\n")
-        vcf_file.write(f"##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n")
-        vcf_file.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
+    # # Set up the output VCF file, only writing the final flipped version
+    # with open(args.output_vcf, "w") as vcf_file:
+    #     # Write the VCF header
+    #     vcf_file.write("##fileformat=VCFv4.2\n")
+    #     vcf_file.write(f"##contig=<ID=chr1,length={args.chromosome_length}>\n")
+    #     vcf_file.write(f"##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n")
+    #     vcf_file.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
         
-        for i in range(args.num_individuals):
-            vcf_file.write(f"\tingroup_{i}")
-        vcf_file.write("\toutgroup_0\n")
+    #     for i in range(args.num_individuals):
+    #         vcf_file.write(f"\tingroup_{i}")
+    #     vcf_file.write("\toutgroup_0\n")
 
-        # Process and flip each variant; add ancestral allele
-        for variant in mutated_ts.variants():
-            original_ref = variant.alleles[0]
-            original_alts = variant.alleles[1:]
+    #     # Process and flip each variant; add ancestral allele
+    #     for variant in mutated_ts.variants():
+    #         original_ref = variant.alleles[0]
+    #         original_alts = variant.alleles[1:]
             
-            outgroup_allele_index = variant.genotypes[-1]  # Assuming last haplotype index
-            ancestral_allele = variant.alleles[outgroup_allele_index]
+    #         outgroup_allele_index = variant.genotypes[-1]  # Assuming last haplotype index
+    #         ancestral_allele = variant.alleles[outgroup_allele_index]
             
-            # Flip REF and first ALT
-            if original_alts:
-                new_ref = original_alts[0]
-                new_alts = [original_ref] + list(original_alts[1:])
-                # Write out variant line
-                vcf_file.write(f"{args.chrom}\t{int(variant.site.position) + 1}\t.\t{new_ref}\t{','.join(new_alts)}\t.\t.\tAA={ancestral_allele}\tGT")
-                for i in range(len(variant.genotypes) // 2):
-                    # Adjust genotype based on flipped alleles
-                    g1 = variant.genotypes[2 * i]
-                    g2 = variant.genotypes[2 * i + 1]
-                    gt1 = 0 if g1 == 1 else 1
-                    gt2 = 0 if g2 == 1 else 1
-                    vcf_file.write(f"\t{gt1}|{gt2}")
-                vcf_file.write("\n")
 
-    print(f"VCF written to {args.output_vcf}")
+    #         # Flip REF and first ALT
+    #         if original_alts:
+    #             new_ref = original_alts[0]
+    #             new_alts = [original_ref] + list(original_alts[1:])
+    #             # Write out variant line
+    #             vcf_file.write(f"{args.chrom}\t{int(variant.site.position) + 1}\t.\t{new_ref}\t{','.join(new_alts)}\t.\t.\tAA={ancestral_allele}\tGT")
+    #             for i in range(len(variant.genotypes) // 2):
+    #                 # Adjust genotype based on flipped alleles
+    #                 g1 = variant.genotypes[2 * i]
+    #                 g2 = variant.genotypes[2 * i + 1]
+    #                 gt1 = 0 if g1 == 1 else 1
+    #                 gt2 = 0 if g2 == 1 else 1
+    #                 vcf_file.write(f"\t{gt1}|{gt2}")
+    #             vcf_file.write("\n")
+
+    # print(f"VCF written to {args.output_vcf}")
 
 
 def main():
