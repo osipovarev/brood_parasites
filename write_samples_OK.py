@@ -148,7 +148,7 @@ def main():
 
 
     ## Parse fastq files -> get sample IDs
-    extensions = ['.gz', '.fastq']
+    extensions = ['.gz', '.fastq', '.fq']
     file_list = parse_dir_files(fastq_dir, extensions)
     id_list = get_ids_from_sample_list(file_list, extensions)
 
