@@ -87,35 +87,37 @@ def simulate_bottleneck_vcf(args):
 #     )
 
 
-def write_real_genotypes(tree_sequence, args):
-    # Write the VCF with ATGC genotypes in REF and ALT fileds
+def write_vcf(tree_sequence, args):
+    # Write the VCF with or without ATGC genotypes in REF and ALT fileds
 
-    with open(args.output_vcf, 'w') as vcf_file:
-        print("##fileformat=VCFv4.2")
-        print(f"##contig=<ID=chr1,length={args.chromosome_length}>\n")
-        print(f"##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
-        print(f"##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n")
-        print("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t")
-        for i in range(args.num_individuals):
-            print(f"\tingroup_{i}")
+    print("##fileformat=VCFv4.2")
+    print(f"##contig=<ID={args.chrom},length={args.chromosome_length}>")
+    print(f"##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">")
+    print(f"##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">")
+    chrom_line = "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t"
+    print(chrom_line + '\t'.join(["ingroup_" + str(i) for i in range(args.num_individuals)]))
+
+    # Randomly assign nucleotide bases A, T, G, C to alleles
+    allele_bases = ['A', 'T', 'G', 'C']
+
+    for variant in tree_sequence.variants():
+        pos = int(variant.site.position)
         
-        # Randomly assign nucleotide bases A, T, G, C to alleles
-        allele_bases = ['A', 'T', 'G', 'C']
-        site_mutations = []
-
-        for variant in tree_sequence.variants():
-            pos = int(variant.site.position)
+        if args.atgc:
             # Randomize assignment of nucleotide bases to alleles, ensuring they are different
             alleles = random.sample(allele_bases, len(variant.alleles))
             ref_allele = alleles[0]
             alt_alleles = alleles[1:]
+        else:
+            ref_allele = '0'
+            alt_alleles = ['1']
 
-            # Write VCF entry
-            genotypes = [
-                f"{variant.genotypes[2 * i]}|{variant.genotypes[2 * i + 1]}"
-                for i in range(args.num_individuals)
-            ]
-            print(f"1\t{pos + 1}\t.\t{ref_allele}\t{','.join(alt_alleles)}\t.\t.\t.\tGT\t" + "\t".join(genotypes))
+        # Write VCF entry
+        genotypes = [
+            f"{variant.genotypes[2 * i]}|{variant.genotypes[2 * i + 1]}"
+            for i in range(args.num_individuals)
+        ]
+        print(f"{args.chrom}\t{pos + 1}\t.\t{ref_allele}\t{','.join(alt_alleles)}\t.\t.\t.\tGT\t" + "\t".join(genotypes))
 
 
 def main():
@@ -151,12 +153,7 @@ def main():
         tree_sequence = simulate_bottleneck_vcf(args)
     else:
         tree_sequence = simulate_vcf(args)
-
-    if args.atgc:
-        write_real_genotypes(tree_sequence, args)
-    else:
-        tree_sequence.write_vcf(sys.stdout, ploidy = 2)
-
+    write_vcf(tree_sequence, args)
 
 
 if __name__ == "__main__":
