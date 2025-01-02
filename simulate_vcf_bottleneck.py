@@ -113,7 +113,7 @@ def main():
     
     ## Add arguments to define length and name of generated chromosome
     parser.add_argument("--chrom", type=str, default="chr1", help="chromosome name; default: chr1")
-    parser.add_argument("--chromosome-length", type=int, default=20_000_000, help="Chromosome length; default: 20_000_000")
+    parser.add_argument("--chromosome-length", type=int, default=2_000_000, help="Chromosome length; default: 2_000_000")
     
     ## Add randomness and output file name
     parser.add_argument("--random-seed", type=int, default=42, help="Random seed for simulation; default: 42")

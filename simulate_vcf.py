@@ -1,93 +1,163 @@
 #!/usr/bin/env python3
 #
-# This script generates a polarized VCF of N diploid individuals and an outgroup \n 
+# This script generates a polarized VCF of N diploid individuals 
 import argparse
 import msprime
 import sys
+import numpy as np
+import random
 
 
 __author__ = "Ekaterina Osipova, 2024."
 
 
-def simulate_and_write_vcf(args):
-    # Setup demography, including an outgroup
-    demography = msprime.Demography()
-    demography.add_population(name="ingroup", initial_size=args.population_size)
-    demography.add_population(name="outgroup", initial_size=args.population_size)
-    demography.add_population_split(time=args.divergence_time, derived=["ingroup"], ancestral="outgroup")
+def simulate_vcf(args):
+    # Simulate the population
+    tree_sequence = msprime.simulate(
+        sample_size=2 * args.num_individuals,
+        Ne=args.population_size,
+        length=args.chromosome_length,
+        mutation_rate=args.mutation_rate,
+        recombination_rate=args.recombination_rate
+    )
+    return(tree_sequence)
 
-    # Simulate the tree sequence
-    tree_sequence = msprime.sim_ancestry(
-        samples={"ingroup": args.num_individuals, "outgroup": args.outgroup_num},
-        ploidy=2,  
-        demography=demography,
-        sequence_length=args.chromosome_length,
+
+def simulate_bottleneck_vcf(args):
+    # Define the demographic events to simulate a bottleneck
+    demographic_events = [
+
+        # At the end of the bottleneck period, return to original size
+        msprime.PopulationParametersChange(
+            time=args.bottleneck_end, initial_size=args.population_size),
+
+        # At time of this # of generations ago, population size reduced requested size
+        msprime.PopulationParametersChange(
+            time=args.bottleneck_start, initial_size=args.bottleneck_size)
+    ]
+
+    # Simulate the tree sequence with the bottleneck
+    tree_sequence = msprime.simulate(
+        sample_size=2 * args.num_individuals, 
+        Ne=args.population_size,
+        length=args.chromosome_length,
+        mutation_rate=args.mutation_rate,
         recombination_rate=args.recombination_rate,
-        random_seed=args.random_seed
+        demographic_events=demographic_events
     )
+    return(tree_sequence)
 
-        # Introduce mutations on the tree sequence
-    mutated_ts = msprime.sim_mutations(
-        tree_sequence,
-        rate=args.mutation_rate,
-        random_seed=args.random_seed
-    )
-    mutated_ts.write_vcf(sys.stdout)
 
-    # # Set up the output VCF file, only writing the final flipped version
-    # with open(args.output_vcf, "w") as vcf_file:
-    #     # Write the VCF header
-    #     vcf_file.write("##fileformat=VCFv4.2\n")
-    #     vcf_file.write(f"##contig=<ID=chr1,length={args.chromosome_length}>\n")
-    #     vcf_file.write(f"##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n")
-    #     vcf_file.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
+
+# def simulate_bottleneck_and_outgroup(args):
+#     # Define the demographic events to simulate a bottleneck
+#     demographic_events = [
+#         msprime.PopulationParametersChange(
+#             time=args.bottleneck_end, initial_size=args.population_size),
+#         msprime.PopulationParametersChange(
+#             time=args.bottleneck_start, initial_size=args.bottleneck_size)
+#     ]
+
+#     # An additional sample for the outgroup
+#     num_individuals_with_outgroup = 2 * args.num_individuals + 2  # 20 individuals + 1 outgroup individual
+
+#     # Simulate the tree sequence with the bottleneck and one outgroup individual
+#     tree_sequence = msprime.simulate(
+#         sample_size=num_individuals_with_outgroup,  # 42 haplotypes: 40 from main population, 2 from outgroup
+#         Ne=args.population_size,
+#         length=args.chromosome_length,
+#         mutation_rate=args.mutation_rate,
+#         recombination_rate=args.recombination_rate,
+#         demographic_events=demographic_events
+#     )
+
+#     # Assume the outgroup is the last two haplotypes
+#     outgroup_nodes = [num_individuals_with_outgroup - 2, num_individuals_with_outgroup - 1]
+
+#     # Polarize the VCF based on the outgroup
+#     tree_sequence.write_vcf(sys.stdout,
+#                             ploidy=2, 
+#                             ancestral_alleles={
+#                                 variant.site.id: variant.alleles[
+#                                     variant.genotypes[outgroup_nodes[0]]
+#                                 ]
+#                                 for variant in tree_sequence.variants()
+#                             },
+#                             individual_mapping=range(2 * args.num_individuals)  # Map only the intended individuals, exclude outgroup
+#     )
+
+
+def write_real_genotypes(tree_sequence, args):
+    # Write the VCF with ATGC genotypes in REF and ALT fileds
+
+    with open(args.output_vcf, 'w') as vcf_file:
+        print("##fileformat=VCFv4.2")
+        print(f"##contig=<ID=chr1,length={args.chromosome_length}>\n")
+        print(f"##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+        print(f"##INFO=<ID=AA,Number=1,Type=String,Description=\"Ancestral Allele\">\n")
+        print("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t")
+        for i in range(args.num_individuals):
+            print(f"\tingroup_{i}")
         
-    #     for i in range(args.num_individuals):
-    #         vcf_file.write(f"\tingroup_{i}")
-    #     vcf_file.write("\toutgroup_0\n")
+        # Randomly assign nucleotide bases A, T, G, C to alleles
+        allele_bases = ['A', 'T', 'G', 'C']
+        site_mutations = []
 
-    #     # Process and flip each variant; add ancestral allele
-    #     for variant in mutated_ts.variants():
-    #         original_ref = variant.alleles[0]
-    #         original_alts = variant.alleles[1:]
-            
-    #         outgroup_allele_index = variant.genotypes[-1]  # Assuming last haplotype index
-    #         ancestral_allele = variant.alleles[outgroup_allele_index]
-            
+        for variant in tree_sequence.variants():
+            pos = int(variant.site.position)
+            # Randomize assignment of nucleotide bases to alleles, ensuring they are different
+            alleles = random.sample(allele_bases, len(variant.alleles))
+            ref_allele = alleles[0]
+            alt_alleles = alleles[1:]
 
-    #         # Flip REF and first ALT
-    #         if original_alts:
-    #             new_ref = original_alts[0]
-    #             new_alts = [original_ref] + list(original_alts[1:])
-    #             # Write out variant line
-    #             vcf_file.write(f"{args.chrom}\t{int(variant.site.position) + 1}\t.\t{new_ref}\t{','.join(new_alts)}\t.\t.\tAA={ancestral_allele}\tGT")
-    #             for i in range(len(variant.genotypes) // 2):
-    #                 # Adjust genotype based on flipped alleles
-    #                 g1 = variant.genotypes[2 * i]
-    #                 g2 = variant.genotypes[2 * i + 1]
-    #                 gt1 = 0 if g1 == 1 else 1
-    #                 gt2 = 0 if g2 == 1 else 1
-    #                 vcf_file.write(f"\t{gt1}|{gt2}")
-    #             vcf_file.write("\n")
-
-    # print(f"VCF written to {args.output_vcf}")
+            # Write VCF entry
+            genotypes = [
+                f"{variant.genotypes[2 * i]}|{variant.genotypes[2 * i + 1]}"
+                for i in range(args.num_individuals)
+            ]
+            print(f"1\t{pos + 1}\t.\t{ref_allele}\t{','.join(alt_alleles)}\t.\t.\t.\tGT\t" + "\t".join(genotypes))
 
 
 def main():
     parser = argparse.ArgumentParser(description="Simulate genetic data and write to VCF")
+    
+    ## Add srguments to define population parameters
     parser.add_argument("--population-size", type=int, default=100_000, help="Population size; default: 100_000")
-    parser.add_argument("--outgroup-num", type=int, default=1, help="Number of outgroup individuals; default: 1")
     parser.add_argument("--num-individuals", type=int, default=20, help="Number of diploid individuals; default: 20")
-    parser.add_argument("--chromosome-length", type=int, default=20_000_000, help="Chromosome length; default: 20_000_000")
     parser.add_argument("--mutation-rate", type=float, default=1e-8, help="Mutation rate; default: 1e-8")
     parser.add_argument("--recombination-rate", type=float, default=1e-8, help="Recombination rate; default: 1e-8")
-    parser.add_argument("--divergence-time", type=int, default=10_000_000, help="Time of divergence in generations for the outgroup; default: 10_000_000")
-    parser.add_argument("--random-seed", type=int, default=42, help="Random seed for simulation; default: 42")
-    parser.add_argument("--output-vcf", type=str, default="simulated.vcf", help="Output VCF file name; default: simulated.vcf")
+    
+    ## Add arguments to define bottleneck; if you want to simulate expansion, change bottleneck_size to a large number
+    parser.add_argument("--bottleneck", action='store_true', help="specify if you want to simulate recent bottleneck")
+    parser.add_argument("--bottleneck_start", type=int, default=100_000, help="when bottleneck started, in generations; default: 100_000")
+    parser.add_argument("--bottleneck_size", type=int, default=1000, help="population size at bottleneck; default: 1000; \
+                         if you want to simulate recent population expansion, just change bottleneck_size to a large number!")
+    parser.add_argument("--bottleneck_end", type=int, default=50_000, help="when bottleneck ended, in generations; default: 100_000")
+    
+    ## Add arguments to define length and name of generated chromosome
     parser.add_argument("--chrom", type=str, default="chr1", help="chromosome name; default: chr1")
+    parser.add_argument("--chromosome-length", type=int, default=2_000_000, help="Chromosome length; default: 2_000_000")
+
+    ## Add argument to generate real genotypes: ATGC 
+    parser.add_argument("--atgc", action='store_true', help="specify if you want to generate real genotypes (A,T,G,C not just 0 or 1) in REF and ATL fileds")
+
+    ## Add randomness
+    parser.add_argument("--random-seed", type=int, default=42, help="Random seed for simulation; default: 42")
+    # parser.add_argument("--output-vcf", type=str, default="simulated.vcf", help="Output VCF file name; default: simulated.vcf")
+
 
     args = parser.parse_args()
-    simulate_and_write_vcf(args)
+    if args.bottleneck:
+        tree_sequence = simulate_bottleneck_vcf(args)
+    else:
+        tree_sequence = simulate_vcf(args)
+
+    if args.atgc:
+        write_real_genotypes(tree_sequence, args)
+    else:
+        tree_sequence.write_vcf(sys.stdout, ploidy = 2)
+
+
 
 if __name__ == "__main__":
     main()
