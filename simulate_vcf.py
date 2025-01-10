@@ -134,7 +134,7 @@ def main():
     parser.add_argument("--bottleneck_start", type=int, default=100_000, help="when bottleneck started, in generations; default: 100_000")
     parser.add_argument("--bottleneck_size", type=int, default=1000, help="population size at bottleneck; default: 1000; \
                          if you want to simulate recent population expansion, just change bottleneck_size to a large number!")
-    parser.add_argument("--bottleneck_end", type=int, default=50_000, help="when bottleneck ended, in generations; default: 100_000")
+    parser.add_argument("--bottleneck_end", type=int, default=50_000, help="when bottleneck ended, in generations; default: 50_000")
     
     ## Add arguments to define length and name of generated chromosome
     parser.add_argument("--chrom", type=str, default="chr1", help="chromosome name; default: chr1")
